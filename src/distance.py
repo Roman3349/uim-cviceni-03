@@ -98,9 +98,7 @@ class EuclideanDistance(Distance):
     @property
     def is_metric(self) -> bool:
         """Euklidovská vzdálenost je pravá metrika."""
-        raise NotImplementedError(
-            "Úkol: implementujte EuclideanDistance.is_metric() — zkopírujte z Cvičení 01."
-        )
+        return True
 
     def calculate(self, point_a: np.ndarray, point_b: np.ndarray) -> float:
         """Vypočítá euklidovskou vzdálenost mezi dvěma body.
@@ -122,9 +120,11 @@ class EuclideanDistance(Distance):
             Euklidovská vzdálenost.
         """
         # assert: Ověřte, že oba vstupy jsou 1D vektory stejné délky
-        raise NotImplementedError(
-            "Úkol: implementujte EuclideanDistance.calculate() — zkopírujte z Cvičení 01."
-        )
+        assert point_a.ndim == 1, "point_a musí být 1D vektor"
+        assert point_b.ndim == 1, "point_b musí být 1D vektor"
+        assert point_a.shape == point_b.shape, "Vektory musí mít stejnou délku"
+
+        return float(np.linalg.norm(point_a - point_b))
 
 
 class ManhattanDistance(Distance):
@@ -133,9 +133,7 @@ class ManhattanDistance(Distance):
     @property
     def is_metric(self) -> bool:
         """Manhattanská vzdálenost je pravá metrika."""
-        raise NotImplementedError(
-            "Úkol: implementujte ManhattanDistance.is_metric() — zkopírujte z Cvičení 01."
-        )
+        return True
 
     def calculate(self, point_a: np.ndarray, point_b: np.ndarray) -> float:
         """Vypočítá manhattanskou vzdálenost mezi dvěma body.
@@ -157,9 +155,13 @@ class ManhattanDistance(Distance):
             Manhattanská vzdálenost.
         """
         # assert: Ověřte, že oba vstupy jsou 1D vektory stejné délky
-        raise NotImplementedError(
-            "Úkol: implementujte ManhattanDistance.calculate() — zkopírujte z Cvičení 01."
+        assert point_a.ndim == 1, "point_a musí být 1D vektor"
+        assert point_b.ndim == 1, "point_b musí být 1D vektor"
+        assert point_a.shape == point_b.shape, (
+            "Vektory musí mít stejnou délku"
         )
+
+        return float(np.sum(np.abs(point_a - point_b)))
 
 
 class CosineCoeficient(Distance):
@@ -168,9 +170,7 @@ class CosineCoeficient(Distance):
     @property
     def is_metric(self) -> bool:
         """Kosinová vzdálenost není pravá metrika (porušuje trojúhelníkovou nerovnost)."""
-        raise NotImplementedError(
-            "Úkol: implementujte CosineCoeficient.is_metric() — zkopírujte z Cvičení 01."
-        )
+        return False
 
     def calculate(self, point_a: np.ndarray, point_b: np.ndarray) -> float:
         """Vypočítá kosinovou vzdálenost mezi dvěma body.
@@ -193,6 +193,18 @@ class CosineCoeficient(Distance):
             Kosinová vzdálenost v rozsahu [0, 2].
         """
         # assert: Ověřte, že oba vstupy jsou 1D vektory stejné délky
-        raise NotImplementedError(
-            "Úkol: implementujte CosineCoeficient.calculate() — zkopírujte z Cvičení 01."
+        assert point_a.ndim == 1, "point_a musí být 1D vektor"
+        assert point_b.ndim == 1, "point_b musí být 1D vektor"
+        assert point_a.shape == point_b.shape, (
+            "Vektory musí mít stejnou délku"
         )
+
+        norm_a = np.linalg.norm(point_a)
+        norm_b = np.linalg.norm(point_b)
+
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+
+        cosine_similarity = np.dot(point_a, point_b) / (norm_a * norm_b)
+
+        return float(1.0 - cosine_similarity)

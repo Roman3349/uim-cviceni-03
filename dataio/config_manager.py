@@ -27,7 +27,7 @@ from dataclasses import dataclass
 
 import yaml
 
-from src import Initializer
+from src import Initializer, RandomUniformInit, ForgyInit, KMeansPlusPlusInit
 
 
 @dataclass
@@ -143,10 +143,14 @@ def make_initializer(name: str, random_state: int | None = None) -> Initializer:
     Initializer
         Instance vybrané inicializační strategie.
     """
-    raise NotImplementedError(
-        "Úkol: implementujte funkci make_initializer — namapujte řetězcový "
-        "název strategie na instanci příslušné třídy Initializer."
-    )
+    registry = {
+        "random_uniform": RandomUniformInit,
+        "forgy": ForgyInit,
+        "kmeans++": KMeansPlusPlusInit,
+    }
+    if name not in registry:
+        raise ValueError(f"Neznámá inicializační strategie: {name}")
+    return registry[name](random_state=random_state)
 
 
 def validate_config(cfg: ExperimentConfig) -> None:
@@ -178,7 +182,8 @@ def validate_config(cfg: ExperimentConfig) -> None:
     ValueError
         Pokud kterákoli hodnota v konfiguraci nesplňuje uvedené podmínky.
     """
-    raise NotImplementedError(
-        "Úkol: implementujte validate_config — ověřte platnost konfigurace "
-        "(k >= 2, q > 1, platný název inicializátoru)."
-    )
+    assert cfg.kmeans.k >= 2, "shlukování s méně než dvěma shluky nedává smysl"
+    assert cfg.fuzzy_cmeans.k >= 2, "shlukování s méně než dvěma shluky nedává smysl"
+    assert cfg.fuzzy_cmeans.q > 1, "parametr fuzifikace musí být větší než 1"
+    assert cfg.kmeans.initializer in ["random_uniform", "forgy", "kmeans++"], "initializer musí být hodnota z množiny random_uniform, forgy, kmeans++"
+    assert cfg.fuzzy_cmeans.initializer in ["random_uniform", "forgy", "kmeans++"], "initializer musí být hodnota z množiny random_uniform, forgy, kmeans++"

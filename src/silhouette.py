@@ -82,10 +82,63 @@ def silhouette_samples(
     """
     # assert: Ověřte, že x je 2D matice, labels je 1D pole stejné délky
     # a obsahuje alespoň 2 různé shluky
-    raise NotImplementedError(
-        "Úkol: implementujte silhouette_samples() — vypočítejte silhouetovou "
-        "hodnotu s(i) = (b(i) - a(i)) / max(a(i), b(i)) pro každý bod."
+    assert x.ndim == 2, "x musí být 2D matice"
+    assert labels.ndim == 1, "labels musí být 1D pole"
+    assert len(labels) == x.shape[0], (
+        "labels musí mít stejný počet prvků jako x má bodů"
     )
+    assert len(np.unique(labels)) >= 2, (
+        "Dataset musí obsahovat alespoň 2 různé shluky"
+    )
+
+    n_points = x.shape[0]
+    scores = np.zeros(n_points, dtype=float)
+
+    unique_labels = np.unique(labels)
+
+    for i in range(n_points):
+        current_cluster = labels[i]
+        same_cluster = np.where(labels == current_cluster)[0]
+
+        if len(same_cluster) == 1:
+            scores[i] = 0.0
+            continue
+
+        same_cluster_distances = []
+
+        for j in same_cluster:
+            if j != i:
+                same_cluster_distances.append(
+                    distance.calculate(x[i], x[j])
+                )
+
+        a_i = np.mean(same_cluster_distances)
+
+        mean_distances = []
+
+        for other_cluster in unique_labels:
+            if other_cluster == current_cluster:
+                continue
+
+            other_cluster_indices = np.where(labels == other_cluster)[0]
+
+            distances = [
+                distance.calculate(x[i], x[j])
+                for j in other_cluster_indices
+            ]
+
+            mean_distances.append(np.mean(distances))
+
+        b_i = np.min(mean_distances)
+
+        denominator = max(a_i, b_i)
+
+        if denominator == 0:
+            scores[i] = 0.0
+        else:
+            scores[i] = (b_i - a_i) / denominator
+
+    return scores
 
 
 def silhouette_score(
@@ -115,7 +168,5 @@ def silhouette_score(
         Průměrné silhouetové skóre v rozsahu [-1, 1].
         Blíže k 1 → kvalitnější shlukování.
     """
-    raise NotImplementedError(
-        "Úkol: implementujte silhouette_score() — vraťte průměr "
-        "výstupu silhouette_samples(X, labels, distance)."
-    )
+    samples = silhouette_samples(x, labels, distance)
+    return np.mean(samples).astype(dtype=np.float64)

@@ -60,10 +60,15 @@ class KMeans(IterativeClustering):
             Tvrdé popisky shluků, tvar ``(n_bodů,)``, hodnoty 0 … k-1.
         """
         # assert: Ověřte, že x a centroids jsou 2D matice se stejným počtem příznaků
-        raise NotImplementedError(
-            "Úkol: implementujte KMeans._update_assignment() — použijte "
-            "_distances_to_centroids a np.argmin pro tvrdé přiřazení."
+        assert x.ndim == 2, "x musí být 2D matice"
+        assert centroids.ndim == 2, "centroids musí být 2D matice"
+        assert x.shape[1] == centroids.shape[1], (
+            "x a centroids musí mít stejný počet příznaků"
         )
+
+        distances = self._distances_to_centroids(x, centroids)
+
+        return np.argmin(distances, axis=1)
 
     def _update_centroids(
         self, x: np.ndarray, assignment: np.ndarray
@@ -90,10 +95,23 @@ class KMeans(IterativeClustering):
             Nová těžiště tvaru ``(k, n_příznaků)``.
         """
         # assert: Ověřte, že assignment je 1D pole a jeho délka odpovídá počtu bodů v x
-        raise NotImplementedError(
-            "Úkol: implementujte KMeans._update_centroids() — průměr bodů "
-            "přiřazených ke každému shluku. Ošetřete prázdné shluky."
+        assert x.ndim == 2, "x musí být 2D matice"
+        assert assignment.ndim == 1, "assignment musí být 1D pole"
+        assert len(assignment) == x.shape[0], (
+            "Délka assignment musí odpovídat počtu bodů v x"
         )
+
+        new_centroids = np.empty_like(self.centroids_)
+
+        for c in range(self.k):
+            points = x[assignment == c]
+
+            if len(points) > 0:
+                new_centroids[c] = np.mean(points, axis=0)
+            else:
+                new_centroids[c] = self.centroids_[c]
+
+        return new_centroids
 
     def predict(self) -> np.ndarray:
         """Vrátí tvrdé popisky shluků uložené po volání ``fit``.
@@ -113,7 +131,7 @@ class KMeans(IterativeClustering):
             Pokud ``fit`` nebyl dosud volán.
         """
         # assert: Ověřte, že fit() byl zavolán (self.assignment_ není None)
-        raise NotImplementedError(
-            "Úkol: implementujte KMeans.predict() — vraťte self.assignment_ "
-            "(tvrdé popisky uložené metodou fit)."
-        )
+        if self.assignment_ is None:
+            raise RuntimeError("Nejdříve je nutné zavolat fit()")
+
+        return self.assignment_

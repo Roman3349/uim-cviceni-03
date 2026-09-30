@@ -113,9 +113,18 @@ class RandomUniformInit(Initializer):
             Těžiště tvaru ``(k, n_příznaků)`` — hodnoty v rozsahu sloupců ``x``.
         """
         # assert: Ověřte, že x je 2D matice, k >= 2 a k nepřekračuje počet bodů
-        raise NotImplementedError(
-            "Úkol: implementujte RandomUniformInit.initialize() \
-            vygenerujte k těžišť náhodně z rovnoměrného rozdělení v rozsahu dat."
+        assert x.ndim == 2, "x musí být 2D matice"
+        assert k >= 2, "k musí být alespoň 2"
+        assert k <= x.shape[0], "k nesmí být větší než počet bodů"
+
+        x_min = np.min(x, axis=0)
+        x_max = np.max(x, axis=0)
+
+        # Náhodná těžiště v rozsahu jednotlivých příznaků
+        return self._rng.uniform(
+            low=x_min,
+            high=x_max,
+            size=(k, x.shape[1]),
         )
 
 class ForgyInit(Initializer):
@@ -148,11 +157,17 @@ class ForgyInit(Initializer):
         """
         # assert: Ověřte, že x je 2D matice, k >= 2 a k nepřekračuje počet bodů
         # (nelze vybrat více různých bodů než jich existuje)
-        raise NotImplementedError(
-            "Úkol: implementujte ForgyInit.initialize() — vyberte k různých "
-            "existujících bodů z x jako počáteční těžiště."
+        assert x.ndim == 2, "x musí být 2D matice"
+        assert k >= 2, "k musí být alespoň 2"
+        assert k <= x.shape[0], "k nesmí být větší než počet bodů"
+
+        indices = self._rng.choice(
+            x.shape[0],
+            size=k,
+            replace=False,
         )
 
+        return x[indices].copy()
 
 class KMeansPlusPlusInit(Initializer):
     """Inicializace k-means++ — chytré rozmístění počátečních těžišť.
@@ -192,7 +207,37 @@ class KMeansPlusPlusInit(Initializer):
             Těžiště tvaru ``(k, n_příznaků)`` vybraná algoritmem k-means++.
         """
         # assert: Ověřte, že x je 2D matice, k >= 2 a k nepřekračuje počet bodů
-        raise NotImplementedError(
-            "Úkol: implementujte KMeansPlusPlusInit.initialize() — algoritmus k-means++. "
-            "Viz docstring pro popis kroků algoritmu."
-        )
+        assert x.ndim == 2, "x musí být 2D matice"
+        assert k >= 2, "k musí být alespoň 2"
+        assert k <= x.shape[0], "k nesmí být větší než počet bodů"
+
+        n_points = x.shape[0]
+
+        first_idx = self._rng.integers(n_points)
+        centroids = [x[first_idx].copy()]
+
+        min_squared_distances = np.sum((x - centroids[0]) ** 2, axis=1)
+
+        for _ in range(1, k):
+            total = np.sum(min_squared_distances)
+
+            if total == 0:
+                next_idx = self._rng.integers(n_points)
+            else:
+                probabilities = min_squared_distances / total
+                next_idx = self._rng.choice(n_points, p=probabilities)
+
+            new_centroid = x[next_idx].copy()
+            centroids.append(new_centroid)
+
+            squared_distances = np.sum(
+                (x - new_centroid) ** 2,
+                axis=1,
+            )
+
+            min_squared_distances = np.minimum(
+                min_squared_distances,
+                squared_distances,
+            )
+
+        return np.array(centroids)

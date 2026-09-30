@@ -109,10 +109,19 @@ class IterativeClustering(ABC):
         """
         # assert: Ověřte, že x a centroids jsou 2D matice se stejným počtem příznaků
         # a centroids má self.k řádků
-        raise NotImplementedError(
-            "Úkol: implementujte _distances_to_centroids() — vytvořte matici "
-            "vzdáleností tvaru (n_bodů, k) voláním self.distance.calculate."
-        )
+        assert x.ndim == 2, "x musí být 2D matice"
+        assert centroids.ndim == 2, "centroids musí být 2D matice"
+        assert x.shape[1] == centroids.shape[1], "x a centroids musí mít stejný počet příznaků"
+        assert centroids.shape[0] == self.k, "Počet těžišť musí odpovídat self.k"
+
+        n_points = x.shape[0]
+        distances = np.empty((n_points, self.k))
+
+        for i in range(n_points):
+            for j in range(self.k):
+                distances[i, j] = self.distance.calculate(x[i], centroids[j])
+
+        return distances
 
     def _has_converged(
         self,
@@ -146,10 +155,11 @@ class IterativeClustering(ABC):
             ``True`` pokud algoritmus konvergoval, jinak ``False``.
         """
         # assert: Ověřte, že obě matice těžišť mají stejný tvar
-        raise NotImplementedError(
-            "Úkol: implementujte _has_converged() — porovnejte posun těžišť "
-            "s prahem self._EPSILON pomocí np.linalg.norm."
+        assert old_centroids.shape == new_centroids.shape, (
+            "old_centroids a new_centroids musí mít stejný tvar"
         )
+
+        return np.linalg.norm(old_centroids - new_centroids) < self._EPSILON
 
     def fit(self, x: np.ndarray) -> IterativeClustering:
         """Natrénuje shlukování na datech iterativní optimalizací.
@@ -199,10 +209,26 @@ class IterativeClustering(ABC):
             Instance ``self`` po natrénování (pro řetězení metod).
         """
         # assert: Ověřte, že x je 2D matice a obsahuje alespoň k bodů
-        raise NotImplementedError(
-            "Úkol: implementujte fit() — iterační smyčku inicializace → přiřazení "
-            "→ přepočet těžišť → konvergence. Viz docstring pro pořadí kroků."
+        assert x.ndim == 2, "x musí být 2D matice"
+        assert x.shape[0] >= self.k, (
+            "Počet bodů musí být alespoň roven počtu shluků k"
         )
+
+        self.centroids_ = self.initializer.initialize(x, self.k)
+
+        for _ in range(self.max_iter):
+            assignment = self._update_assignment(x, self.centroids_)
+
+            old_centroids = self.centroids_.copy()
+            new_centroids = self._update_centroids(x, assignment)
+
+            self.assignment_ = assignment
+            self.centroids_ = new_centroids
+
+            if self._has_converged(old_centroids, new_centroids):
+                break
+
+        return self
 
     @abstractmethod
     def _update_assignment(

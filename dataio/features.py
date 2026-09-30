@@ -22,6 +22,7 @@ Description:
 """
 
 import numpy as np
+from matplotlib.colors import rgb2hex, rgb_to_hsv
 
 
 def to_hsv(rgb_data: np.ndarray) -> np.ndarray:
@@ -48,6 +49,7 @@ def to_hsv(rgb_data: np.ndarray) -> np.ndarray:
     np.ndarray
         Příznakový matice ve formátu HSV, tvar ``(n_pixelů, 3)``.
     """
+    return rgb_to_hsv(rgb_data)
     raise NotImplementedError(
         "Úkol: implementujte to_hsv — převeďte příznakovou matici z RGB do HSV. "
         "Nápověda: podívejte se na matplotlib.colors.rgb_to_hsv nebo colorsys."
